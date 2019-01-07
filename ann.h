@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#define MAX_SIZE 100000
+#define MAX_SIZE 1000
 
 //Declarations ANN structure
-typedef struct network{
+typedef struct networks{
     int n_layers;
     int dim[MAX_SIZE];
     double weights[MAX_SIZE][MAX_SIZE][MAX_SIZE];
@@ -15,8 +15,8 @@ typedef struct network{
 //Function prototypes
 
 double sigmoid(double x);
-network init_ann(int[] ,int);
-network init_ann_with_weights(int[],double [MAX_SIZE][MAX_SIZE][MAX_SIZE], double[MAX_SIZE][MAX_SIZE],int);
+void init_ann(network*,int[] ,int);
+void init_ann_with_weights(network*,int[],double [MAX_SIZE][MAX_SIZE][MAX_SIZE], double[MAX_SIZE][MAX_SIZE],int);
 void feed_forward(network*,double output[MAX_SIZE][MAX_SIZE]);
 void train(network*, double [MAX_SIZE][MAX_SIZE],int,double);
 void test(network*,double[MAX_SIZE][MAX_SIZE],int);
@@ -26,62 +26,61 @@ void arrayCopy(double dest[],double source[],int length);
 
 //Definitions
 
-network init_ann(int dim[],int n_layers){
-    network ann;
+void init_ann(network* ann,int dim[],int n_layers){
+    
     time_t t;
     /* Intializes random number generator */
     srand((unsigned)time(&t));
-    ann.n_layers = n_layers;
+    ann->n_layers = n_layers;
+    
     for(int i=0;i<n_layers;i++){
-        ann.dim[i] = dim[i];
+        ann->dim[i] = dim[i];
     }
     for(int i=1;i<n_layers;i++){
         for(int j=0;j<dim[i];j++){
             for(int k=0;k<dim[i-1];k++){
-                ann.weights[i-1][j][k] = ((double)rand()/(double)RAND_MAX)*(1/sqrt(dim[i-1]+dim[i]));
+                ann->weights[i-1][j][k] = ((double)rand()/(double)RAND_MAX)*(1/sqrt(dim[i-1]+dim[i]));
             }
         }
     }
     for(int i=0;i<n_layers;i++){
         int val = 1;
-        for(int j=0;j<ann.dim[i];j++){
+        for(int j=0;j<ann->dim[i];j++){
             if(i == 0){
-                ann.biases[i][j] = 0;
+                ann->biases[i][j] = 0;
             }
             else{
-                ann.biases[i][j] = val;
+                ann->biases[i][j] = val;
             }
         }
         
     }
-    return ann;
-
+    
 }
 
-network init_ann_with_weights(int dim[],double weights[MAX_SIZE][MAX_SIZE][MAX_SIZE],double biases[MAX_SIZE][MAX_SIZE],int n_layers){
-    network ann;
-    ann.n_layers = n_layers;
+void init_ann_with_weights(network* ann,int dim[],double weights[MAX_SIZE][MAX_SIZE][MAX_SIZE],double biases[MAX_SIZE][MAX_SIZE],int n_layers){
+    
+    ann->n_layers = n_layers;
     for(int i=0;i<n_layers;i++){
-        ann.dim[i] = dim[i];
+        ann->dim[i] = dim[i];
     }
     for(int i=1;i<n_layers;i++){
         for(int j=0;j<dim[i];j++){
             for(int k=0;k<dim[i-1];k++){
-                ann.weights[i-1][j][k] = weights[i-1][j][k];
+                ann->weights[i-1][j][k] = weights[i-1][j][k];
             }
         }
     }
     for(int i=0;i<n_layers;i++){
-        for(int j=0;j<ann.dim[i];j++){
+        for(int j=0;j<ann->dim[i];j++){
             if(i == 0){
-                ann.biases[i][j] = 0;
+                ann->biases[i][j] = 0;
             }
             else{
-                ann.biases[i][j] = biases[i][j];
+                ann->biases[i][j] = biases[i][j];
             }
         }
     }
-    return ann;
 }
 
 
