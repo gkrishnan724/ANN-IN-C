@@ -1,12 +1,12 @@
 
-#define MAX_SIZE 100
-
+#define MAX_SIZE  1000
+#define LAYER_SIZE 10
 //Declarations ANN structure
 typedef struct networks{
     int n_layers;
-    int dim[MAX_SIZE];
-    double weights[MAX_SIZE][MAX_SIZE][MAX_SIZE];
-    double biases[MAX_SIZE][MAX_SIZE];
+    int dim[LAYER_SIZE];
+    double weights[LAYER_SIZE][MAX_SIZE][MAX_SIZE];
+    double biases[LAYER_SIZE][MAX_SIZE];
 }network;
 
 
@@ -14,10 +14,11 @@ typedef struct networks{
 
 double sigmoid(double x);
 void init_ann(network*,int[] ,int);
-void init_ann_with_weights(network*,int[],double [MAX_SIZE][MAX_SIZE][MAX_SIZE], double[MAX_SIZE][MAX_SIZE],int);
-void feed_forward(network*,double output[MAX_SIZE][MAX_SIZE]);
-void train(network*, double [MAX_SIZE][MAX_SIZE],int,double);
-void test(network*,double[MAX_SIZE][MAX_SIZE],int);
+void init_ann_with_weights(network*,int[],double [LAYER_SIZE][MAX_SIZE][MAX_SIZE], double[LAYER_SIZE][MAX_SIZE],int);
+void feed_forward(network*,double output[LAYER_SIZE][MAX_SIZE]);
+void train(network*, double**,int,double);
+int predict(network*,double[MAX_SIZE]);
+void test(network*,double**,int);
 
 //Misc Functions
 void arrayCopy(double dest[],double source[],int length);
@@ -42,7 +43,7 @@ void init_ann(network* ann,int dim[],int n_layers){
         }
     }
     for(int i=0;i<n_layers;i++){
-        int val = 0;
+        int val = 1;
         for(int j=0;j<ann->dim[i];j++){
             if(i == 0){
                 ann->biases[i][j] = 0;
@@ -56,7 +57,7 @@ void init_ann(network* ann,int dim[],int n_layers){
     
 }
 
-void init_ann_with_weights(network* ann,int dim[],double weights[MAX_SIZE][MAX_SIZE][MAX_SIZE],double biases[MAX_SIZE][MAX_SIZE],int n_layers){
+void init_ann_with_weights(network* ann,int dim[],double weights[LAYER_SIZE][MAX_SIZE][MAX_SIZE],double biases[LAYER_SIZE][MAX_SIZE],int n_layers){
     
     ann->n_layers = n_layers;
     for(int i=0;i<n_layers;i++){
@@ -82,7 +83,8 @@ void init_ann_with_weights(network* ann,int dim[],double weights[MAX_SIZE][MAX_S
 }
 
 
-void train(network* ann,double data[MAX_SIZE][MAX_SIZE],int length,double learning_rate){
+
+void train(network* ann,double **data,int length,double learning_rate){
     
     for(int t=0;t<length;t++){
         double output[ann->n_layers][MAX_SIZE];
@@ -108,7 +110,9 @@ void train(network* ann,double data[MAX_SIZE][MAX_SIZE],int length,double learni
                 
         }
         else{
+            // printf("%f\n",data[t][784]);
             for(int i=0;i<ann->dim[ann->n_layers-1];i++){
+                
                 double expected_value = (i == data[t][ann->dim[0]])?1:0;
                 double observed_value = output[ann->n_layers - 1][i];
                 d[ann->n_layers-1][i] = observed_value*(1-observed_value)*(observed_value - expected_value);
@@ -145,7 +149,33 @@ void train(network* ann,double data[MAX_SIZE][MAX_SIZE],int length,double learni
     }
 }
 
-void test(network* ann,double data[MAX_SIZE][MAX_SIZE],int length){
+
+
+int predict(network* ann, double data[MAX_SIZE]){
+    double output[ann->n_layers][MAX_SIZE];
+    arrayCopy(output[0],data,ann->dim[0]);
+    feed_forward(ann,output);
+    int maxval = 0;
+    if(ann->dim[ann->n_layers-1] == 1){
+        if(output[ann->n_layers-1][0] >= 0.5){
+            return 1;
+        }
+        else{
+            return 0;
+        }
+    }
+    else{
+        for(int i=0;i<ann->dim[ann->n_layers-1];i++){
+           
+            if(output[ann->n_layers-1][i] > output[ann->n_layers - 1][maxval]){
+                maxval = i;
+            }
+        }
+        return maxval;
+    }
+}
+
+void test(network* ann,double **data,int length){
     int correct = 0;
     int incorrect = 0;
     for(int t=0;t<length;t++){
@@ -165,12 +195,11 @@ void test(network* ann,double data[MAX_SIZE][MAX_SIZE],int length){
         }
         else{
             for(int i=0;i<ann->dim[ann->n_layers-1];i++){
-                printf("%lf ",output[ann->n_layers-1][i]);
                 if(output[ann->n_layers-1][i] > output[ann->n_layers - 1][maxval]){
                     maxval = i;
                 }
             }
-            printf("%lf\n",data[t][ann->dim[0]]);
+           
             printf("Object %lf is classified as %d\n",data[t][ann->dim[0]],maxval);
             if(maxval == data[t][ann->dim[0]]){
                 correct += 1;
